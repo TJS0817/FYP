@@ -265,7 +265,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("Welcome Back !")
+st.title("PersonaPath")
 
 # Navigation
 if "user_id" in st.session_state:
@@ -593,4 +593,5 @@ elif choice == "Logout":
     st.success("✅ You have been logged out.")
     st.session_state.menu = "Login"
     st.rerun()
+
 
