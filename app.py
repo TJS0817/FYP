@@ -330,25 +330,114 @@ elif choice == "Job Recommendations":
 
 # ---------- Dataset Trends ----------
 elif choice == "Dataset Trends":
-    st.markdown("<h2 style='text-align:center; color:#898AC4;'>📊 Dataset Trends & Insights</h2>", unsafe_allow_html=True)
+    # --- Page Header ---
+    st.markdown("""
+        <div style="text-align:center; padding: 20px 0;">
+            <h2 style="color:#898AC4;">📊 Dataset Trends & Insights</h2>
+            <p style="font-size:16px; color:#555;">
+                Explore personality distributions, average satisfaction, and emerging skill trends among Malaysian users.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # 1️⃣ Personality Distribution (Donut Chart)
+    st.subheader("🧠 Personality Type Distribution")
+
     conn = get_connection()
-    cur = conn.cursor()
     try:
+        cur = conn.cursor()
         cur.execute("SELECT cluster_id, COUNT(*) FROM personality_results GROUP BY cluster_id")
         rows = cur.fetchall()
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        rows = []
     finally:
-        cur.close()
         conn.close()
 
+    cluster_labels = {
+        0: "The Strategist",
+        1: "The Connector",
+        2: "The Analyzer",
+        3: "The Helper"
+    }
+
     if rows:
-        clusters = [f"Cluster {r[0]}" for r in rows]
+        clusters = [cluster_labels.get(r[0], f"Unknown ({r[0]})") for r in rows]
         counts = [r[1] for r in rows]
 
-        fig = go.Figure(data=[go.Pie(labels=clusters, values=counts, hole=0.5)])
-        fig.update_layout(showlegend=True, height=500)
+        fig = go.Figure(
+            data=[go.Pie(
+                labels=clusters,
+                values=counts,
+                hole=0.5,
+                textinfo='label+percent',
+                textfont_size=16
+            )]
+        )
+        fig.update_traces(marker=dict(line=dict(color='#000000', width=2)))
+        fig.update_layout(
+            showlegend=True,
+            height=600
+        )
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("No data available yet.")
+        st.info("No data available yet to display personality distribution.")
+
+    st.markdown("---")
+
+    # 2️⃣ Job Satisfaction by Personality Type (Vertical Bar Chart)
+    st.subheader("💼 Average Job Satisfaction by Personality Type")
+
+    # You can later replace these values with data from your DB
+    job_satisfaction = {
+        "The Strategist": 3.8,
+        "The Connector": 4.2,
+        "The Analyzer": 3.5,
+        "The Helper": 4.0
+    }
+
+    fig = go.Figure([
+        go.Bar(
+            x=list(job_satisfaction.keys()),
+            y=list(job_satisfaction.values()),
+            text=[f"{v:.1f}" for v in job_satisfaction.values()],
+            textposition='auto',
+            marker_color=['#C0C9EE', '#A2AADB', '#898AC4', '#6C63FF']
+        )
+    ])
+    fig.update_layout(
+        yaxis=dict(title="Satisfaction Level (1–5)"),
+        xaxis=dict(title="Personality Type"),
+        height=500
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("---")
+
+    # 3️⃣ Top Soft Skills (Horizontal Bar Chart)
+    st.subheader("🌟 Top Soft Skills in Demand (2025 Trends)")
+
+    skills = ["Communication", "Problem Solving", "Adaptability", "Teamwork", "Leadership"]
+    percentages = [90, 82, 78, 73, 69]
+
+    fig = go.Figure([
+        go.Bar(
+            x=percentages,
+            y=skills,
+            orientation='h',
+            text=[f"{v}%" for v in percentages],
+            textposition='auto',
+            marker_color='#898AC4'
+        )
+    ])
+    fig.update_layout(
+        xaxis=dict(title="Demand Percentage (%)"),
+        yaxis=dict(title="Skill"),
+        height=500
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("<p style='text-align:center;color:#555;'>Data source: Simulated insights (for demo purpose)</p>", unsafe_allow_html=True)
 
 # ---------- Logout ----------
 elif choice == "Logout":
@@ -357,3 +446,4 @@ elif choice == "Logout":
     st.success("✅ You have been logged out.")
     st.session_state.menu = "Login"
     st.rerun()
+
