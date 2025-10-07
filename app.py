@@ -284,7 +284,8 @@ elif choice == "Personality Test":
                         q21,q22,q23,q24,q25,q26,q27,q28,q29,q30,
                         openness_raw, conscientiousness_raw, extraversion_raw,
                         agreeableness_raw, neuroticism_raw, cluster_id
-                    ) VALUES (
+                    )
+                    VALUES (
                         ?, ?, 
                         ?,?,?,?,?,?,?,?,?,?, 
                         ?,?,?,?,?,?,?,?,?,?, 
@@ -293,16 +294,17 @@ elif choice == "Personality Test":
                     )
                     """
 
+                    # ✅ Ensure exactly 38 values: 1 (user_id) + 1 (taken_at) + 30 answers + 6 trait metrics = 38
                     params = (
-                        st.session_state['user_id'],
-                        datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        *answers,  # 30 answers
-                        openness, conscientiousness, extraversion,
-                        agreeableness, neuroticism, cluster_label
+                        st.session_state['user_id'],                              # 1
+                        datetime.now().strftime('%Y-%m-%d %H:%M:%S'),             # 2
+                        *answers[:30],                                            # 30 answers (3–32)
+                        openness, conscientiousness, extraversion,                # 33–35
+                        agreeableness, neuroticism, cluster_label                 # 36–38
                     )
 
-                    # Debug print (optional)
-                    # st.write(f"🧮 Number of params: {len(params)}")
+                    # Debugging help (optional)
+                    # st.write(f"Number of params: {len(params)}")
 
                     cur.execute(sql, params)
                     conn.commit()
@@ -479,3 +481,4 @@ elif choice == "Logout":
     st.success("✅ You have been logged out.")
     st.session_state.menu = "Login"
     st.rerun()
+
