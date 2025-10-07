@@ -225,6 +225,7 @@ elif choice == "Personality Test":
         st.subheader("Personality Test (30 Questions)")
         st.info("Choose: Strongly disagree, Disagree, Neutral, Agree, Strongly agree")
 
+        # ----- Questionnaire Form -----
         with st.form("test_form"):
             answers = []
             for i, q in enumerate(questions, start=1):
@@ -245,21 +246,22 @@ elif choice == "Personality Test":
 
             submitted = st.form_submit_button("Submit Test")
 
+        # ----- Process Submission -----
         if submitted:
             if None in answers:
                 st.error("⚠️ Please answer all questions before submitting.")
             else:
-                # reverse scoring
+                # Reverse scoring for selected items
                 scored = [(6 - v if idx in reverse_idx else v) for idx, v in enumerate(answers)]
 
-                # compute trait totals
+                # Compute trait totals
                 openness = sum(scored[i] for i in trait_map["Openness"])
                 conscientiousness = sum(scored[i] for i in trait_map["Conscientiousness"])
                 extraversion = sum(scored[i] for i in trait_map["Extraversion"])
                 agreeableness = sum(scored[i] for i in trait_map["Agreeableness"])
                 neuroticism = sum(scored[i] for i in trait_map["Neuroticism"])
 
-                # cluster
+                # Predict cluster
                 feats = np.array([[openness, conscientiousness, extraversion, agreeableness, neuroticism]])
                 if not model_ready:
                     st.warning("⚠️ Clustering model not found (scaler.joblib / kmeans.joblib).")
@@ -269,10 +271,11 @@ elif choice == "Personality Test":
                     cluster_label = int(kmeans.predict(Xs)[0])
                     st.session_state["cluster_label"] = cluster_label
 
-                # save results to DB
+                # ----- Save results to SQLite DB -----
                 try:
                     conn = get_connection()
                     cur = conn.cursor()
+
                     sql = """
                     INSERT INTO personality_results (
                         user_id, taken_at,
@@ -289,20 +292,29 @@ elif choice == "Personality Test":
                         ?,?,?,?,?,?,?
                     )
                     """
+
                     params = (
                         st.session_state['user_id'],
                         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         *answers,  # 30 answers
-                        openness, conscientiousness, extraversion, agreeableness, neuroticism,
-                        cluster_label
+                        openness, conscientiousness, extraversion,
+                        agreeableness, neuroticism, cluster_label
                     )
+
+                    # Debug print (optional)
+                    # st.write(f"🧮 Number of params: {len(params)}")
+
                     cur.execute(sql, params)
                     conn.commit()
                     st.success("✅ Your responses have been saved successfully.")
+
+                    # Redirect to profile
                     st.session_state.menu = "Personality Profile"
                     st.rerun()
+
                 except Exception as e:
                     st.error(f"Failed to save results: {e}")
+
                 finally:
                     conn.close()
 
@@ -467,7 +479,3 @@ elif choice == "Logout":
     st.success("✅ You have been logged out.")
     st.session_state.menu = "Login"
     st.rerun()
-
-
-
-
