@@ -270,41 +270,41 @@ elif choice == "Personality Test":
                     st.session_state["cluster_label"] = cluster_label
 
                 # save results to DB
-                try:
-                    conn = get_connection()
-                    cur = conn.cursor()
-                    sql = """
-                    INSERT INTO personality_results (
-                        user_id, taken_at,
-                        q1,q2,q3,q4,q5,q6,q7,q8,q9,q10,
-                        q11,q12,q13,q14,q15,q16,q17,q18,q19,q20,
-                        q21,q22,q23,q24,q25,q26,q27,q28,q29,q30,
-                        openness_raw, conscientiousness_raw, extraversion_raw,
-                        agreeableness_raw, neuroticism_raw, cluster_id
-                    ) VALUES (
-                        ?, ?,
-                        ?,?,?,?,?,?,?,?,?,?,
-                        ?,?,?,?,?,?,?,?,?,?,
-                        ?,?,?,?,?,?,?,?,?,?,
-                        ?,?,?,?,?,?,?,?
-                    )
-                    """
-                    params = (
-                        st.session_state['user_id'],
-                        datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        *answers,
-                        openness, conscientiousness, extraversion, agreeableness, neuroticism,
-                        cluster_label
-                    )
-                    cur.execute(sql, params)
-                    conn.commit()
-                    st.success("✅ Your responses have been saved successfully.")
-                    st.session_state.menu = "Personality Profile"
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Failed to save results: {e}")
-                finally:
-                    conn.close()
+              try:
+    conn = get_connection()
+    cur = conn.cursor()
+    sql = """
+    INSERT INTO personality_results (
+        user_id, taken_at,
+        q1,q2,q3,q4,q5,q6,q7,q8,q9,q10,
+        q11,q12,q13,q14,q15,q16,q17,q18,q19,q20,
+        q21,q22,q23,q24,q25,q26,q27,q28,q29,q30,
+        openness_raw, conscientiousness_raw, extraversion_raw,
+        agreeableness_raw, neuroticism_raw, cluster_id
+    ) VALUES (
+        ?, ?, 
+        ?,?,?,?,?,?,?,?,?,?, 
+        ?,?,?,?,?,?,?,?,?,?, 
+        ?,?,?,?,?,?,?,?,?,?, 
+        ?,?,?,?,?,?,?
+    )
+    """
+    params = (
+        st.session_state['user_id'],
+        datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        *answers,  # 30 answers
+        openness, conscientiousness, extraversion, agreeableness, neuroticism,
+        cluster_label
+    )
+    cur.execute(sql, params)
+    conn.commit()
+    st.success("✅ Your responses have been saved successfully.")
+    st.session_state.menu = "Personality Profile"
+    st.rerun()
+except Exception as e:
+    st.error(f"Failed to save results: {e}")
+finally:
+    conn.close()
 
 # ---------- Personality Profile ----------
 elif choice == "Personality Profile":
@@ -467,5 +467,6 @@ elif choice == "Logout":
     st.success("✅ You have been logged out.")
     st.session_state.menu = "Login"
     st.rerun()
+
 
 
