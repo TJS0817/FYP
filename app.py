@@ -223,66 +223,87 @@ elif choice == "Personality Test":
         st.warning("Please login to take the test")
     else:
         st.subheader("Personality Test (30 Questions)")
-        st.info("Choose: Strongly disagree → Strongly agree")
+        st.info("Choose: Strongly disagree, Disagree, Neutral, Agree, Strongly agree")
 
         with st.form("test_form"):
             answers = []
             for i, q in enumerate(questions, start=1):
-                ans = st.radio(f"Q{i}. {q}",
+                ans = st.radio(
+                    f"Q{i}. {q}",
                     ("Strongly disagree","Disagree","Neutral","Agree","Strongly agree"),
-                    key=f"q{i}", index=None)
-                val = None if ans is None else {"Strongly disagree":1,"Disagree":2,"Neutral":3,"Agree":4,"Strongly agree":5}[ans]
+                    key=f"q{i}",
+                    index=None
+                )
+                val = None if ans is None else {
+                    "Strongly disagree": 1,
+                    "Disagree": 2,
+                    "Neutral": 3,
+                    "Agree": 4,
+                    "Strongly agree": 5
+                }[ans]
                 answers.append(val)
 
             submitted = st.form_submit_button("Submit Test")
 
         if submitted:
             if None in answers:
-                st.error("Please answer all questions.")
+                st.error("⚠️ Please answer all questions before submitting.")
             else:
-                scored = [(6-v if idx in reverse_idx else v) for idx,v in enumerate(answers)]
+                # reverse scoring
+                scored = [(6 - v if idx in reverse_idx else v) for idx, v in enumerate(answers)]
+
+                # compute trait totals
                 openness = sum(scored[i] for i in trait_map["Openness"])
                 conscientiousness = sum(scored[i] for i in trait_map["Conscientiousness"])
                 extraversion = sum(scored[i] for i in trait_map["Extraversion"])
                 agreeableness = sum(scored[i] for i in trait_map["Agreeableness"])
                 neuroticism = sum(scored[i] for i in trait_map["Neuroticism"])
 
+                # cluster
                 feats = np.array([[openness, conscientiousness, extraversion, agreeableness, neuroticism]])
                 if not model_ready:
-                    st.warning("⚠️ Model not found (scaler.joblib/kmeans.joblib).")
+                    st.warning("⚠️ Clustering model not found (scaler.joblib / kmeans.joblib).")
                     cluster_label = None
                 else:
                     Xs = scaler.transform(feats)
                     cluster_label = int(kmeans.predict(Xs)[0])
                     st.session_state["cluster_label"] = cluster_label
 
+                # save results to DB
                 try:
                     conn = get_connection()
                     cur = conn.cursor()
-                    cur.execute("""
-                        INSERT INTO personality_results (
-                          user_id, taken_at,
-                          q1,q2,q3,q4,q5,q6,q7,q8,q9,q10,
-                          q11,q12,q13,q14,q15,q16,q17,q18,q19,q20,
-                          q21,q22,q23,q24,q25,q26,q27,q28,q29,q30,
-                          openness_raw, conscientiousness_raw, extraversion_raw, agreeableness_raw, neuroticism_raw, cluster_id
-                        ) VALUES (
-                          ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
-                        )
-                    """, (
+                    sql = """
+                    INSERT INTO personality_results (
+                        user_id, taken_at,
+                        q1,q2,q3,q4,q5,q6,q7,q8,q9,q10,
+                        q11,q12,q13,q14,q15,q16,q17,q18,q19,q20,
+                        q21,q22,q23,q24,q25,q26,q27,q28,q29,q30,
+                        openness_raw, conscientiousness_raw, extraversion_raw,
+                        agreeableness_raw, neuroticism_raw, cluster_id
+                    ) VALUES (
+                        ?, ?,
+                        ?,?,?,?,?,?,?,?,?,?,
+                        ?,?,?,?,?,?,?,?,?,?,
+                        ?,?,?,?,?,?,?,?,?,?,
+                        ?,?,?,?,?,?,?,?
+                    )
+                    """
+                    params = (
                         st.session_state['user_id'],
                         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         *answers,
-                        openness, conscientiousness, extraversion, agreeableness, neuroticism, cluster_label
-                    ))
+                        openness, conscientiousness, extraversion, agreeableness, neuroticism,
+                        cluster_label
+                    )
+                    cur.execute(sql, params)
                     conn.commit()
-                    st.success("✅ Your responses have been saved.")
+                    st.success("✅ Your responses have been saved successfully.")
                     st.session_state.menu = "Personality Profile"
                     st.rerun()
                 except Exception as e:
-                    st.error("Failed to save results: " + str(e))
+                    st.error(f"Failed to save results: {e}")
                 finally:
-                    cur.close()
                     conn.close()
 
 # ---------- Personality Profile ----------
@@ -446,4 +467,5 @@ elif choice == "Logout":
     st.success("✅ You have been logged out.")
     st.session_state.menu = "Login"
     st.rerun()
+
 
