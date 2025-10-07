@@ -1,4 +1,5 @@
 import streamlit as st
+import sqlite3
 import pymysql
 import hashlib
 import joblib
@@ -9,14 +10,7 @@ from datetime import datetime
 
 # ---------- DB connection ----------
 def get_connection():
-    return pymysql.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="fyp_personality",
-        charset='utf8mb4',
-        cursorclass=pymysql.cursors.Cursor
-    )
+    return sqlite3.connect("fyp_personality.db")
 
 # ---------- password hashing ----------
 def hash_password(password):
@@ -595,4 +589,5 @@ elif choice == "Logout":
     st.success("✅ You have been logged out.")
     st.session_state.menu = "Login"
     st.rerun()
+
 
