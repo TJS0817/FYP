@@ -10,10 +10,11 @@ from datetime import datetime
 # ---------- DB connection ----------
 def get_connection():
     return pymysql.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="fyp_personality",
+        host="sql300.infinityfree.com",        # InfinityFree Hostname
+        user="if0_40119317",                   # Your MySQL username
+        password="HM5AmOGRnY8",                # Your MySQL password
+        database="if0_40119317_fyp_personality", # Your DB name
+        port=3306,
         charset='utf8mb4',
         cursorclass=pymysql.cursors.Cursor
     )
@@ -654,4 +655,5 @@ elif choice == "Logout":
     st.success("✅ You have been logged out.")
     st.session_state.menu = "Login"
     st.rerun()
+
 
